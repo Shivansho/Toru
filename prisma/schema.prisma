@@ -46,12 +46,15 @@ model College {
   retentionSettings Json    // e.g. { "transcripts": 30, "globalMessages": 30, "reports": 365 }
   status           String   @default("ACTIVE")
   featureFlags     Json     @default("{}")
+  matcherSettings  Json     @default("{}")
+  mustPassSamples  Json     @default("[]")
   createdAt        DateTime @default(now())
 
   users            User[]
   globalMessages   GlobalMessage[]
   chatSessions     ChatSession[]
   wordlist         Wordlist[]
+    settingsVersions CollegeSettingsVersion[]
 }
 
 model User {
@@ -226,6 +229,9 @@ model Admin {
   userId    String?  @unique
   emailHash String?  @unique
   role      String
+  revealsRequested EmailRevealRequest[] @relation("Requester")
+  revealsApproved  EmailRevealRequest[] @relation("Approver")
+  legalRequests    LegalRequest[]
   totpSecret String?
   totpEnabled Boolean @default(false)
   createdAt DateTime @default(now())
@@ -261,4 +267,41 @@ model BannedHash {
   type      String   // 'EMAIL' or 'DEVICE'
   reason    String
   createdAt DateTime @default(now())
+}
+
+model CollegeSettingsVersion {
+  id         String   @id @default(uuid())
+  collegeId  String
+  settings   Json
+  adminId    String
+  createdAt  DateTime @default(now())
+
+  college    College  @relation(fields: [collegeId], references: [id])
+}
+
+model EmailRevealRequest {
+  id           String   @id @default(uuid())
+  targetUserId String
+  requesterId  String
+  approverId   String?
+  reason       String
+  legalRef     String?
+  status       String   @default("PENDING") // PENDING, APPROVED, REJECTED, EXPIRED
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  requester    Admin    @relation("Requester", fields: [requesterId], references: [id])
+  approver     Admin?   @relation("Approver", fields: [approverId], references: [id])
+}
+
+model LegalRequest {
+  id           String   @id @default(uuid())
+  adminId      String
+  source       String   // e.g. "Law Enforcement", "College Admin"
+  reference    String
+  description  String
+  decision     String
+  createdAt    DateTime @default(now())
+
+  admin        Admin    @relation(fields: [adminId], references: [id])
 }

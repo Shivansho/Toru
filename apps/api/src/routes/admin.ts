@@ -6,6 +6,8 @@ import { requireAdmin, requireRole } from '../middleware/admin';
 import { authenticator } from 'otplib';
 import adminReportsRoutes from './admin_reports';
 import adminWordlistsRoutes from './admin_wordlists';
+import adminCollegeRoutes from './admin_college';
+import adminDashboardRoutes from './admin_dashboard';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -145,3 +147,7 @@ export default router;
 router.use('/reports', adminReportsRoutes);
 
 router.use('/wordlists', adminWordlistsRoutes);
+
+router.use('/colleges', adminCollegeRoutes);
+
+router.use('/dashboard', adminDashboardRoutes);

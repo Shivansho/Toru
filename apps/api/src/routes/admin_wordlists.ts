@@ -3,7 +3,7 @@ import { PrismaClient } from '@prisma/client';
 import { requireAdmin, requireRole } from '../middleware/admin';
 import { withAudit } from '../services/audit';
 import { redisClient } from '../redis';
-import { refreshWordlists } from '../services/moderation';
+import { refreshWordlists, moderateMessage, HttpClassifier, StubClassifier } from '../services/moderation';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -27,7 +27,7 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 router.post('/', async (req: Request, res: Response) => {
-  const { term, kind, collegeId } = req.body; // kind: BLOCK or REVIEW
+  const { term, kind, collegeId } = req.body; 
 
   if (!term || !kind || !collegeId) return res.status(400).json({ error: 'Missing fields' });
 
@@ -59,12 +59,47 @@ router.delete('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// Refresh signal across instances
+// Bulk import (CSV simple format: term,kind)
+router.post('/import', async (req: Request, res: Response) => {
+  const { collegeId, csv } = req.body;
+  if (!collegeId || !csv) return res.status(400).json({ error: 'Missing fields' });
+
+  const lines = csv.split('\\n');
+  let added = 0;
+
+  const performAction = async (tx: any) => {
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      const [term, kindStr] = line.split(',');
+      if (!term || !kindStr) continue;
+      const kind = kindStr.trim().toUpperCase();
+      if (['BLOCK', 'REVIEW', 'ALLOWED'].includes(kind)) {
+        await tx.wordlist.create({ data: { term: term.trim(), kind, collegeId } });
+        added++;
+      }
+    }
+  };
+
+  try {
+    await withAudit(prisma, req.adminId as string, 'IMPORT_WORDLIST', collegeId, \`Imported \${added} terms\`, performAction);
+    return res.json({ message: 'Imported', added });
+  } catch(e: any) {
+    return res.status(400).json({ error: e.message });
+  }
+});
+
+// Test Pipeline
+router.post('/test', async (req: Request, res: Response) => {
+  const { text, collegeId } = req.body;
+  if (!text || !collegeId) return res.status(400).json({ error: 'Missing fields' });
+  
+  // Use stub for predictable testing
+  const classifier = new StubClassifier();
+  const result = await moderateMessage(text, collegeId, classifier);
+  return res.json(result);
+});
+
 router.post('/refresh', async (req: Request, res: Response) => {
-  // Emit to redis pubsub so all instances reload
-  // Wait, does redisClient have pubsub exposed? Typically you need a separate publisher client.
-  // We can just call it locally for now if pubsub isn't fully wired for cross-instance broadcasts.
-  // Let's do it locally and also simulate a broadcast.
   try {
     await refreshWordlists(prisma);
     await redisClient.publish('moderation:wordlists_refresh', 'refresh');
