@@ -7,6 +7,7 @@ import pinoHttp from 'pino-http';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/auth';
 import onboardingRoutes from './routes/onboarding';
+import adminRoutes from './routes/admin';
 import chatRoutes from './routes/chat';
 
 const logger = pino({
@@ -29,6 +30,7 @@ app.get('/health', (req, res) => {
 app.use('/auth', authRoutes);
 app.use('/onboarding', onboardingRoutes);
 app.use('/chat', chatRoutes);
+app.use('/admin', adminRoutes);
 
 // Central error handler
 app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {

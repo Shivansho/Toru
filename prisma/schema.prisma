@@ -225,6 +225,8 @@ model Admin {
   userId    String?  @unique
   emailHash String?  @unique
   role      String
+  totpSecret String?
+  totpEnabled Boolean @default(false)
   createdAt DateTime @default(now())
 
   user      User?    @relation(fields: [userId], references: [id])
