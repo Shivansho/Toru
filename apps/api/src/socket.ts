@@ -156,6 +156,59 @@ export function setupSocketIO(httpServer: HttpServer) {
       }
     });
 
+    
+    socket.on('session:message', async (data: { body: string }) => {
+      const sessionId = await redisClient.get(`active_session:${userId}`);
+      if (!sessionId) return;
+      
+      const session = await prisma.chatSession.findUnique({ where: { id: sessionId } });
+      if (!session || session.endedAt) {
+        socket.emit('error', { message: 'Session ended', code: 'SESSION_ENDED' });
+        return;
+      }
+      
+      const modResult = await moderateMessage(data.body, collegeId, classifier);
+      if (modResult.decision === 'reject') {
+        socket.emit('error', { message: modResult.reasons[0], code: 'MOD_REJECT' });
+        return;
+      }
+
+      const encrypted = encrypt(data.body);
+      const msg = await prisma.sessionMessage.create({
+        data: {
+          sessionId,
+          senderId: userId,
+          body: encrypted
+        }
+      });
+
+      const otherUserId = session.userAId === userId ? session.userBId : session.userAId;
+      const otherSocket = await redisClient.get(`active_socket:${otherUserId}`);
+      
+      if (otherSocket) {
+        io.to(otherSocket).emit('session:receive', {
+          id: msg.id,
+          body: data.body, // send raw body to client, DB gets encrypted
+          createdAt: msg.createdAt.toISOString()
+        });
+      }
+    });
+
+    socket.on('session:typing', async (data: { isTyping: boolean }) => {
+      const sessionId = await redisClient.get(`active_session:${userId}`);
+      if (!sessionId) return;
+      
+      const session = await prisma.chatSession.findUnique({ where: { id: sessionId } });
+      if (!session || session.endedAt) return;
+      
+      const otherUserId = session.userAId === userId ? session.userBId : session.userAId;
+      const otherSocket = await redisClient.get(`active_socket:${otherUserId}`);
+      
+      if (otherSocket) {
+        io.to(otherSocket).emit('session:typing', { isTyping: data.isTyping });
+      }
+    });
+  
     socket.on('match:skip', async () => {
       const sessionId = await redisClient.get(`active_session:${userId}`);
       if (sessionId) {

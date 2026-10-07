@@ -10,7 +10,13 @@ export const ClientEventSchemas = {
   }),
   'match:cancel': z.object({}),
   'match:leave': z.object({}),
-  'match:skip': z.object({})
+  'match:skip': z.object({}),
+  'session:message': z.object({
+    body: z.string().min(1).max(500)
+  }),
+  'session:typing': z.object({
+    isTyping: z.boolean()
+  })
 };
 
 export type ClientEvents = {
@@ -25,6 +31,12 @@ export interface GlobalMessagePayload {
   flags?: string[];
 }
 
+export interface SessionMessagePayload {
+  id: string;
+  body: string;
+  createdAt: string;
+}
+
 export interface ServerEvents {
   'online-count': (count: number) => void;
   'error': (err: { message: string, code: string }) => void;
@@ -33,4 +45,6 @@ export interface ServerEvents {
   'match:joined': (data: { sessionId: string }) => void;
   'match:widen-offer': (data: { message: string }) => void;
   'match:ended': (data: { reason: string }) => void;
+  'session:receive': (msg: SessionMessagePayload) => void;
+  'session:typing': (data: { isTyping: boolean }) => void;
 }
