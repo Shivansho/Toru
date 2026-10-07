@@ -1,6 +1,11 @@
 import express, { Request, Response, NextFunction } from 'express';
+import { createServer } from 'http';
+import { setupSocketIO } from './socket';
 import pino from 'pino';
 import pinoHttp from 'pino-http';
+import cookieParser from 'cookie-parser';
+import authRoutes from './routes/auth';
+import onboardingRoutes from './routes/onboarding';
 
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info',
@@ -8,12 +13,19 @@ const logger = pino({
 });
 
 const app = express();
+export const httpServer = createServer(app);
+export const io = setupSocketIO(httpServer);
+
 app.use(express.json());
+app.use(cookieParser());
 app.use(pinoHttp({ logger }));
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
+
+app.use('/auth', authRoutes);
+app.use('/onboarding', onboardingRoutes);
 
 // Central error handler
 app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
@@ -23,11 +35,11 @@ app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
 
 const PORT = process.env.PORT || 4000;
 
-let server: ReturnType<typeof app.listen>;
+let server: ReturnType<typeof httpServer.listen>;
 
 if (process.env.NODE_ENV !== 'test') {
-  server = app.listen(PORT, () => {
-    logger.info(`Server running on port ${PORT}`);
+  server = httpServer.listen(PORT, () => {
+    logger.info(\`Server running on port \${PORT}\`);
   });
 
   // Graceful shutdown
