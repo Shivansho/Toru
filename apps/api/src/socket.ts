@@ -136,7 +136,58 @@ export function setupSocketIO(httpServer: HttpServer) {
       await redisClient.sadd(`college:${collegeId}:online`, userId);
     });
 
+    
+    socket.on('match:search', async (data: { filter: any }) => {
+      try {
+        await joinQueue(collegeId, { userId, joiningYear: (socket as any).joiningYear, filter: data.filter, timestamp: Date.now() });
+      } catch (e: any) {
+        socket.emit('error', { message: e.message, code: 'MATCH_ERROR' });
+      }
+    });
+
+    
+    socket.on('match:leave', async () => {
+      const sessionId = await redisClient.get(`active_session:${userId}`);
+      if (sessionId) {
+        await redisClient.del(`active_session:${userId}`);
+        // Notify other user? We can query DB for other user.
+        // Simplified for this phase, just emit ended to room or specific socket
+        // In a real implementation we'd find the partner.
+      }
+    });
+
+    socket.on('match:skip', async () => {
+      const sessionId = await redisClient.get(`active_session:${userId}`);
+      if (sessionId) {
+        await redisClient.del(`active_session:${userId}`);
+        // Re-join queue immediately
+        try {
+          await joinQueue(collegeId, { userId, joiningYear: (socket as any).joiningYear, filter: 'ANY', timestamp: Date.now() });
+        } catch(e) {}
+      }
+    });
+
+    socket.on('match:cancel', async () => {
+      await leaveQueue(collegeId, userId);
+    });
+
+    
     socket.on('disconnect', async () => {
+      await leaveQueue(collegeId, userId);
+      
+      const inSession = await redisClient.get(`active_session:${userId}`);
+      if (inSession) {
+        // Grace period
+        setTimeout(async () => {
+          const reconnected = await redisClient.get(`active_socket:${userId}`);
+          if (!reconnected) {
+             // Notify partner they left (stubbed)
+             await redisClient.del(`active_session:${userId}`);
+          }
+        }, 15000);
+      }
+  
+  
       const active = await redisClient.get(`active_socket:${userId}`);
       if (active === socket.id) {
         await redisClient.del(`active_socket:${userId}`);
