@@ -1,6 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { createServer } from 'http';
 import { setupSocketIO } from './socket';
+import { startCronJobs } from './services/jobs';
 import pino from 'pino';
 import pinoHttp from 'pino-http';
 import cookieParser from 'cookie-parser';
