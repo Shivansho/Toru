@@ -4,6 +4,8 @@ import { redisClient } from '../redis';
 import crypto from 'crypto';
 import { requireAdmin, requireRole } from '../middleware/admin';
 import { authenticator } from 'otplib';
+import adminReportsRoutes from './admin_reports';
+import adminWordlistsRoutes from './admin_wordlists';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -139,3 +141,7 @@ router.get('/settings', requireRole('superadmin'), async (req: Request, res: Res
 });
 
 export default router;
+
+router.use('/reports', adminReportsRoutes);
+
+router.use('/wordlists', adminWordlistsRoutes);

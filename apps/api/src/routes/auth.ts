@@ -48,6 +48,12 @@ router.post('/request-otp', requestOtpLimiter, async (req: Request, res: Respons
   }
 
   // Check if user exists and is banned/deleted/graduated
+  
+    const isBanned = await prisma.bannedHash.findUnique({ where: { hash: emailHash } });
+    if (isBanned) {
+      return res.status(403).json({ error: 'This email is banned from Toru.' });
+    }
+
   const user = await prisma.user.findUnique({ where: { emailHash } });
   if (user && ['BANNED', 'SUSPENDED', 'DELETED', 'GRADUATED'].includes(user.status)) {
     return res.json(genericSuccess); // Pretend we sent it, or should we? The requirements: "Block users with status BANNED... with a neutral message."

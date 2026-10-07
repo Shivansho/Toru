@@ -177,6 +177,7 @@ model Report {
   reviewerId String?
   resolution String?
   createdAt  DateTime     @default(now())
+  appealStatus String?      @default("NONE")
   updatedAt  DateTime     @updatedAt
 
   reporter   User         @relation("Reporter", fields: [reporterId], references: [id])
@@ -252,4 +253,12 @@ model JobRun {
   status      String
   recordsDeleted Int   @default(0)
   error       String?
+}
+
+model BannedHash {
+  id        String   @id @default(uuid())
+  hash      String   @unique
+  type      String   // 'EMAIL' or 'DEVICE'
+  reason    String
+  createdAt DateTime @default(now())
 }
