@@ -1,0 +1,240 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum VerificationLevel {
+  DECLARED
+  QR_VERIFIED
+  COLLEGE_VERIFIED
+}
+
+enum UserStatus {
+  ACTIVE
+  MUTED
+  SUSPENDED
+  BANNED
+  GRADUATED
+  DELETED
+}
+
+enum ReportStatus {
+  OPEN
+  IN_REVIEW
+  RESOLVED
+  DISMISSED
+}
+
+enum SanctionType {
+  WARNING
+  MUTE
+  SUSPENSION
+  BAN
+}
+
+model College {
+  id               String   @id @default(uuid())
+  name             String
+  domains          String[]
+  studentPattern   String
+  staffPattern     String
+  programmeLengths Json     // Map from branch code to years
+  retentionSettings Json    // e.g. { "transcripts": 30, "globalMessages": 30, "reports": 365 }
+  status           String   @default("ACTIVE")
+  featureFlags     Json     @default("{}")
+  createdAt        DateTime @default(now())
+
+  users            User[]
+  globalMessages   GlobalMessage[]
+  chatSessions     ChatSession[]
+  wordlist         Wordlist[]
+}
+
+model User {
+  id                String            @id @default(uuid())
+  collegeId         String
+  emailEncrypted    String
+  emailHash         String            @unique
+  ageVerified       Boolean           @default(false)
+  ageVerifiedAt     DateTime?
+  verificationLevel VerificationLevel @default(DECLARED)
+  joiningYear       Int
+  branch            String
+  programme         String
+  yearCorrected     Boolean           @default(false)
+  status            UserStatus        @default(ACTIVE)
+  createdAt         DateTime          @default(now())
+
+  college           College           @relation(fields: [collegeId], references: [id])
+  profile           Profile?
+  preference        Preference?
+  consents          Consent[]
+  globalMessages    GlobalMessage[]
+  
+  sessionsAsA       ChatSession[]     @relation("UserASessions")
+  sessionsAsB       ChatSession[]     @relation("UserBSessions")
+  sessionMessages   SessionMessage[]
+
+  reportsFiled      Report[]          @relation("Reporter")
+  reportsReceived   Report[]          @relation("Reported")
+  
+  blocksInitiated   Block[]           @relation("Blocker")
+  blocksReceived    Block[]           @relation("Blocked")
+  
+  sanctions         Sanction[]
+  adminRole         Admin?
+}
+
+model Profile {
+  userId         String   @id
+  alias          String   @unique
+  aliasRotatedAt DateTime @default(now())
+
+  user           User     @relation(fields: [userId], references: [id])
+}
+
+model Preference {
+  userId     String   @id
+  yearFilter Json     @default("[]") // Array of years acceptable to match with
+
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model Consent {
+  id         String   @id @default(uuid())
+  userId     String
+  document   String
+  version    String
+  acceptedAt DateTime @default(now())
+
+  user       User     @relation(fields: [userId], references: [id])
+}
+
+model OtpCode {
+  emailHash String   @id
+  codeHash  String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+}
+
+model GlobalMessage {
+  id        String   @id @default(uuid())
+  collegeId String
+  userId    String
+  body      String
+  createdAt DateTime @default(now())
+  hidden    Boolean  @default(false)
+
+  college   College  @relation(fields: [collegeId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  
+  @@index([createdAt])
+}
+
+model ChatSession {
+  id        String    @id @default(uuid())
+  collegeId String
+  userAId   String
+  userBId   String
+  startedAt DateTime  @default(now())
+  endedAt   DateTime?
+  locked    Boolean   @default(false)
+
+  college   College   @relation(fields: [collegeId], references: [id])
+  userA     User      @relation("UserASessions", fields: [userAId], references: [id])
+  userB     User      @relation("UserBSessions", fields: [userBId], references: [id])
+  messages  SessionMessage[]
+  reports   Report[]
+}
+
+model SessionMessage {
+  id        String   @id @default(uuid())
+  sessionId String
+  senderId  String
+  body      String   // Encrypted string
+  createdAt DateTime @default(now())
+
+  session   ChatSession @relation(fields: [sessionId], references: [id])
+  sender    User        @relation(fields: [senderId], references: [id])
+  
+  @@index([createdAt])
+}
+
+model Report {
+  id         String       @id @default(uuid())
+  reporterId String
+  reportedId String
+  sessionId  String?
+  reason     String
+  priority   Int          @default(0)
+  status     ReportStatus @default(OPEN)
+  reviewerId String?
+  resolution String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  reporter   User         @relation("Reporter", fields: [reporterId], references: [id])
+  reported   User         @relation("Reported", fields: [reportedId], references: [id])
+  session    ChatSession? @relation(fields: [sessionId], references: [id])
+  
+  @@index([status, priority, createdAt])
+}
+
+model Block {
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker   User     @relation("Blocker", fields: [blockerId], references: [id])
+  blocked   User     @relation("Blocked", fields: [blockedId], references: [id])
+
+  @@id([blockerId, blockedId])
+}
+
+model Sanction {
+  id         String       @id @default(uuid())
+  userId     String
+  type       SanctionType
+  reason     String
+  expiresAt  DateTime?
+  deviceHash String?
+  createdAt  DateTime     @default(now())
+
+  user       User         @relation(fields: [userId], references: [id])
+}
+
+model Wordlist {
+  id        String   @id @default(uuid())
+  collegeId String
+  term      String
+  kind      String
+  createdAt DateTime @default(now())
+
+  college   College  @relation(fields: [collegeId], references: [id])
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  userId    String?  @unique
+  emailHash String?  @unique
+  role      String
+  createdAt DateTime @default(now())
+
+  user      User?    @relation(fields: [userId], references: [id])
+  auditLogs AuditLog[]
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  adminId   String
+  action    String
+  target    String
+  reason    String
+  createdAt DateTime @default(now())
+
+  admin     Admin    @relation(fields: [adminId], references: [id])
+}
