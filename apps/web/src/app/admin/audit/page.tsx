@@ -19,7 +19,7 @@ export default function AuditLogAdmin() {
     if (action) query.append('action', action);
     if (target) query.append('target', target);
 
-    const res = await fetch(\`/api/admin/dashboard/audit?\${query.toString()}\`);
+    const res = await fetch(`/api/admin/dashboard/audit?${query.toString()}`);
     if (res.ok) setLogs(await res.json());
     setLoading(false);
   };
@@ -40,7 +40,7 @@ export default function AuditLogAdmin() {
     if (action) query.append('action', action);
     if (target) query.append('target', target);
     
-    window.open(\`/api/admin/dashboard/audit?\${query.toString()}\`, '_blank');
+    window.open(`/api/admin/dashboard/audit?${query.toString()}`, '_blank');
   };
 
   return (
@@ -95,7 +95,7 @@ export default function AuditLogAdmin() {
                     <div className="text-xs text-slate-400">{log.admin?.role}</div>
                   </td>
                   <td className="p-4">
-                    <span className={\`text-xs font-bold px-2 py-1 rounded \${log.action.includes('REVEAL') ? 'bg-red-900 text-red-200' : 'bg-slate-800 text-slate-300'}\`}>
+                    <span className={`text-xs font-bold px-2 py-1 rounded ${log.action.includes('REVEAL') ? 'bg-red-900 text-red-200' : 'bg-slate-800 text-slate-300'}`}>
                       {log.action}
                     </span>
                   </td>

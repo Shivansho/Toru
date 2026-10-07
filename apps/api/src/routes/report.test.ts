@@ -63,7 +63,7 @@ describe('Reporting & Blocking System', () => {
   });
 
   it('report filed 71 hours after chat succeeds', async () => {
-    const res = await request(app).post('/chat/reports').set('Cookie', \`sessionId=\${sessionA}\`).send({
+    const res = await request(app).post('/chat/reports').set('Cookie', `sessionId=${sessionA}`).send({
       reason: 'harassment',
       sessionId: recentSessionId
     });
@@ -79,7 +79,7 @@ describe('Reporting & Blocking System', () => {
   });
 
   it('report filed 73 hours after chat fails', async () => {
-    const res = await request(app).post('/chat/reports').set('Cookie', \`sessionId=\${sessionA}\`).send({
+    const res = await request(app).post('/chat/reports').set('Cookie', `sessionId=${sessionA}`).send({
       reason: 'harassment',
       sessionId: oldSessionId
     });
@@ -89,7 +89,7 @@ describe('Reporting & Blocking System', () => {
 
   it('ignores duplicate reports on the same session', async () => {
     // A reports recentSession again
-    const res = await request(app).post('/chat/reports').set('Cookie', \`sessionId=\${sessionA}\`).send({
+    const res = await request(app).post('/chat/reports').set('Cookie', `sessionId=${sessionA}`).send({
       reason: 'harassment',
       sessionId: recentSessionId
     });
@@ -104,13 +104,13 @@ describe('Reporting & Blocking System', () => {
     const msg1 = await prisma.globalMessage.create({ data: { collegeId: college.id, userId: userB.id, body: 'bad' } });
     
     // C reports B
-    await request(app).post('/chat/reports').set('Cookie', \`sessionId=\${sessionC}\`).send({
+    await request(app).post('/chat/reports').set('Cookie', `sessionId=${sessionC}`).send({
       reason: 'spam', globalMessageId: msg1.id
     });
     
     // D reports B
     const sessionD = await createSession(userD.id);
-    await request(app).post('/chat/reports').set('Cookie', \`sessionId=\${sessionD}\`).send({
+    await request(app).post('/chat/reports').set('Cookie', `sessionId=${sessionD}`).send({
       reason: 'spam', globalMessageId: msg1.id
     });
 

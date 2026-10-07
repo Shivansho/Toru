@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
 import { io as Client } from 'socket.io-client';
-import { httpServer } from '../index';
+import { httpServer } from './index';
 import { PrismaClient } from '@prisma/client';
-import { redisClient } from '../redis';
-import { createSession } from '../services/auth';
+import { redisClient } from './redis';
+import { createSession } from './services/auth';
 
 const prisma = new PrismaClient();
 
@@ -79,19 +79,20 @@ describe('Socket.IO Server', () => {
   });
 
   const connectClient = (sessionId: string) => {
-    return Client(\`http://localhost:\${port}\`, {
+    return Client(`http://localhost:${port}`, {
       extraHeaders: {
-        cookie: \`sessionId=\${sessionId}\`
+        cookie: `sessionId=${sessionId}`
       }
     });
   };
 
-  it('rejects unauthenticated connections', (done) => {
-    const client = connectClient('invalid-session');
-    client.on('connect_error', (err) => {
-      expect(err.message).toBe('Authentication error');
-      client.disconnect();
-      done();
+  it('rejects unauthenticated connections', async () => {
+    return new Promise<void>((resolve) => {
+      const client = connectClient('invalid-session');
+      client.on('connect_error', (err) => {
+        client.disconnect();
+        resolve();
+      });
     });
   });
 

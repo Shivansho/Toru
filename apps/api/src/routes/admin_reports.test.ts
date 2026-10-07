@@ -23,12 +23,12 @@ describe('Admin Reports & Moderation Actions', () => {
     modId = m.id;
 
     const sSession = crypto.randomUUID();
-    await redisClient.set(\`admin_session:\${sSession}\`, superadminId, 'EX', 3600);
-    superCookie = \`adminSessionId=\${sSession}\`;
+    await redisClient.set(`admin_session:${sSession}`, superadminId, 'EX', 3600);
+    superCookie = `adminSessionId=${sSession}`;
 
     const mSession = crypto.randomUUID();
-    await redisClient.set(\`admin_session:\${mSession}\`, modId, 'EX', 3600);
-    modCookie = \`adminSessionId=\${mSession}\`;
+    await redisClient.set(`admin_session:${mSession}`, modId, 'EX', 3600);
+    modCookie = `adminSessionId=${mSession}`;
 
     // Users
     const col = await prisma.college.create({ data: { name: 'Admin Test Col', domains: [], studentPattern: '', staffPattern: '', programmeLengths: {}, retentionSettings: {}, status: 'ACTIVE' } });
@@ -85,15 +85,15 @@ describe('Admin Reports & Moderation Actions', () => {
   });
 
   it('assigns report uniquely (prevents double assignment)', async () => {
-    const res1 = await request(app).patch(\`/admin/reports/\${rId1}/assign\`).set('Cookie', modCookie);
+    const res1 = await request(app).patch(`/admin/reports/${rId1}/assign`).set('Cookie', modCookie);
     expect(res1.status).toBe(200);
 
-    const res2 = await request(app).patch(\`/admin/reports/\${rId1}/assign\`).set('Cookie', superCookie);
+    const res2 = await request(app).patch(`/admin/reports/${rId1}/assign`).set('Cookie', superCookie);
     expect(res2.status).toBe(409); // Already assigned
   });
 
   it('escalate marks report as urgent and writes audit log', async () => {
-    const res = await request(app).post(\`/admin/reports/\${rId1}/escalate\`).set('Cookie', modCookie).send({ reason: 'Needs urgent check' });
+    const res = await request(app).post(`/admin/reports/${rId1}/escalate`).set('Cookie', modCookie).send({ reason: 'Needs urgent check' });
     expect(res.status).toBe(200);
     
     const rep = await prisma.report.findUnique({ where: { id: rId1 } });
@@ -104,7 +104,7 @@ describe('Admin Reports & Moderation Actions', () => {
   });
 
   it('warn action creates sanction and updates report', async () => {
-    const res = await request(app).post(\`/admin/reports/\${rId2}/action\`).set('Cookie', modCookie).send({ action: 'warn', reason: 'Be nice' });
+    const res = await request(app).post(`/admin/reports/${rId2}/action`).set('Cookie', modCookie).send({ action: 'warn', reason: 'Be nice' });
     expect(res.status).toBe(200);
 
     const rep = await prisma.report.findUnique({ where: { id: rId2 } });
@@ -115,7 +115,7 @@ describe('Admin Reports & Moderation Actions', () => {
   });
 
   it('ban action creates sanction, bans hash, and updates user status', async () => {
-    const res = await request(app).post(\`/admin/reports/\${rId3}/action\`).set('Cookie', superCookie).send({ action: 'ban', reason: 'Zero tolerance' });
+    const res = await request(app).post(`/admin/reports/${rId3}/action`).set('Cookie', superCookie).send({ action: 'ban', reason: 'Zero tolerance' });
     expect(res.status).toBe(200);
 
     const rep = await prisma.report.findUnique({ where: { id: rId3 } });
@@ -129,7 +129,7 @@ describe('Admin Reports & Moderation Actions', () => {
   });
 
   it('suspected minor deactivates and scrambles user data while preserving ban hash', async () => {
-    const res = await request(app).post(\`/admin/reports/\${rId5}/action\`).set('Cookie', superCookie).send({ action: 'suspected_minor', reason: 'Too young' });
+    const res = await request(app).post(`/admin/reports/${rId5}/action`).set('Cookie', superCookie).send({ action: 'suspected_minor', reason: 'Too young' });
     expect(res.status).toBe(200);
 
     const user = await prisma.user.findUnique({ where: { id: reportedUser.id } });

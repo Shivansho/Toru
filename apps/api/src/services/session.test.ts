@@ -44,8 +44,8 @@ describe('1-on-1 Session Flow', () => {
     chatSessionId = chatSession.id;
 
     // Manually set active session in Redis to simulate matching engine output
-    await redisClient.set(\`active_session:\${userA.id}\`, chatSessionId);
-    await redisClient.set(\`active_session:\${userB.id}\`, chatSessionId);
+    await redisClient.set(`active_session:${userA.id}`, chatSessionId);
+    await redisClient.set(`active_session:${userB.id}`, chatSessionId);
   });
 
   afterAll(async () => {
@@ -59,7 +59,7 @@ describe('1-on-1 Session Flow', () => {
     } catch(e) {}
   });
 
-  const connectClient = (sessionId: string) => Client(\`http://localhost:\${port}\`, { extraHeaders: { cookie: \`sessionId=\${sessionId}\` } });
+  const connectClient = (sessionId: string) => Client(`http://localhost:${port}`, { extraHeaders: { cookie: `sessionId=${sessionId}` } });
 
   it('delivers message to the other participant and encrypts it in DB', (done) => {
     const clientA = connectClient(sessionA);

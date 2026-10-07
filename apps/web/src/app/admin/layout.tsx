@@ -91,7 +91,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link 
               key={item.href} 
               href={item.href}
-              className={\`block px-4 py-2 rounded transition \${pathname.startsWith(item.href) ? 'bg-red-600 text-white font-bold shadow-lg shadow-red-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}\`}
+              className={`block px-4 py-2 rounded transition ${pathname.startsWith(item.href) ? 'bg-red-600 text-white font-bold shadow-lg shadow-red-900/20' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
             >
               {item.label}
             </Link>

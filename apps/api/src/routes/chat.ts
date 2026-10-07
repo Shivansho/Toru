@@ -65,7 +65,7 @@ router.get('/recent', requireAuth, requireAgeVerified, async (req: Request, res:
 
   const payload = sessions.map(s => ({
     sessionId: s.id,
-    label: \`Chat on \${s.startedAt.toLocaleDateString()}\`,
+    label: `Chat on ${s.startedAt.toLocaleDateString()}`,
     startedAt: s.startedAt.toISOString(),
     endedAt: s.endedAt?.toISOString() || null
   }));
@@ -138,7 +138,7 @@ router.post('/reports', requireAuth, requireAgeVerified, async (req: Request, re
   if (!sessionId && !globalMessageId) return res.status(400).json({ error: 'Reference required' });
 
   // Rate limiting (simple placeholder check, real one via Redis)
-  const rlKey = \`ratelimit:report:\${req.userId}\`;
+  const rlKey = `ratelimit:report:${req.userId}`;
   const reqs = await redisClient.incr(rlKey);
   if (reqs === 1) await redisClient.expire(rlKey, 60); // 1 min window
   if (reqs > 5) return res.status(429).json({ error: 'Too many reports, try again later' });
@@ -230,7 +230,7 @@ router.post('/reports', requireAuth, requireAgeVerified, async (req: Request, re
     });
     
     // Disconnect user if online
-    const socketId = await redisClient.get(\`active_socket:\${reportedId}\`);
+    const socketId = await redisClient.get(`active_socket:${reportedId}`);
     if (socketId) {
       io.to(socketId).emit('error', { message: 'Your account has been temporarily muted due to multiple reports.', code: 'MUTED' });
     }

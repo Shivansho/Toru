@@ -22,8 +22,8 @@ describe('Auth Endpoints', () => {
         data: {
           name: 'Test',
           domains: ['college.example'],
-          studentPattern: '^([a-z0-9\\\\.]+)_(?<branch>[a-z]+)\\\\.(?<yy>\\\\d{2})@college\\\\.example$',
-          staffPattern: '^([a-z0-9\\\\.]+)@college\\\\.example$',
+          studentPattern: '^([a-z0-9\\.]+)_(?<branch>[a-z]+)\\.(?<yy>\\d{2})@college\\.example$',
+          staffPattern: '^([a-z0-9\\.]+)@college\\.example$',
           programmeLengths: { cs: 4 },
           retentionSettings: {},
           status: 'ACTIVE',

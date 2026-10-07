@@ -210,8 +210,8 @@ export default function MainApp() {
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {mMessages.map((msg, idx) => (
-            <div key={msg.id || idx} className={\`flex \${msg.isMe ? 'justify-end' : 'justify-start'}\`}>
-              <div className={\`max-w-[80%] rounded-2xl p-3 shadow-md \${msg.isMe ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-slate-800 text-slate-100 rounded-bl-sm border border-slate-700'}\`}>
+            <div key={msg.id || idx} className={`flex ${msg.isMe ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[80%] rounded-2xl p-3 shadow-md ${msg.isMe ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-slate-800 text-slate-100 rounded-bl-sm border border-slate-700'}`}>
                 <p className="text-sm break-words whitespace-pre-wrap">{msg.body}</p>
               </div>
             </div>

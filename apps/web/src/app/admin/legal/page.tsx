@@ -50,7 +50,7 @@ export default function LegalAndRevealAdmin() {
   const handleRequestReveal = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(''); setMsg(''); setRevealedEmail('');
-    const res = await fetch(\`/api/admin/dashboard/users/\${targetUserId}/reveal/request\`, {
+    const res = await fetch(`/api/admin/dashboard/users/${targetUserId}/reveal/request`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reason: revealReason, legalRef: revealRef, totp, code: totp }) // Send as both totp and code depending on what admin uses
@@ -70,7 +70,7 @@ export default function LegalAndRevealAdmin() {
 
   const handleApproveReveal = async (reqId: string) => {
     setError(''); setMsg('');
-    const res = await fetch(\`/api/admin/dashboard/reveals/\${reqId}/approve\`, { method: 'POST' });
+    const res = await fetch(`/api/admin/dashboard/reveals/${reqId}/approve`, { method: 'POST' });
     if (res.ok) {
       setMsg('Request approved.');
     } else {
@@ -80,7 +80,7 @@ export default function LegalAndRevealAdmin() {
 
   const handleViewReveal = async () => {
     setError(''); setMsg('');
-    const res = await fetch(\`/api/admin/dashboard/users/\${targetUserId}/reveal/view\`);
+    const res = await fetch(`/api/admin/dashboard/users/${targetUserId}/reveal/view`);
     if (res.ok) {
       const data = await res.json();
       setRevealedEmail(data.email);

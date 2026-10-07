@@ -150,7 +150,7 @@ router.post('/:id/action', async (req: Request, res: Response) => {
 
   const performAction = async (tx: any) => {
     let reportStatus = 'RESOLVED';
-    let resolution = \`\${action}: \${reason}\`;
+    let resolution = `${action}: ${reason}`;
 
     if (action === 'dismiss') {
       reportStatus = 'DISMISSED';
@@ -161,25 +161,25 @@ router.post('/:id/action', async (req: Request, res: Response) => {
       await tx.sanction.create({ data: { userId: rId, type: 'MUTE', reason, expiresAt } });
       await tx.user.update({ where: { id: rId }, data: { status: 'MUTED' } });
       
-      const sid = await redisClient.get(\`active_socket:\${rId}\`);
+      const sid = await redisClient.get(`active_socket:${rId}`);
       if (sid) io.to(sid).emit('error', { message: 'You have been muted', code: 'MUTED' });
     } else if (action === 'suspend') {
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       await tx.sanction.create({ data: { userId: rId, type: 'SUSPENSION', reason, expiresAt } });
       await tx.user.update({ where: { id: rId }, data: { status: 'SUSPENDED' } });
       
-      const sid = await redisClient.get(\`active_socket:\${rId}\`);
+      const sid = await redisClient.get(`active_socket:${rId}`);
       if (sid) io.to(sid).disconnectSockets();
     } else if (action === 'ban') {
       await tx.sanction.create({ data: { userId: rId, type: 'BAN', reason } });
       await tx.user.update({ where: { id: rId }, data: { status: 'BANNED' } });
-      await tx.bannedHash.create({ data: { hash: user.emailHash, type: 'EMAIL', reason } });
+      await tx.bannedHash.upsert({ where: { hash: user.emailHash }, update: { reason }, create: { hash: user.emailHash, type: 'EMAIL', reason } });
       // device hash omitted for simplicity, would pull from profile/user if present
       
-      const sid = await redisClient.get(\`active_socket:\${rId}\`);
+      const sid = await redisClient.get(`active_socket:${rId}`);
       if (sid) io.to(sid).disconnectSockets();
     } else if (action === 'suspected_minor') {
-      await tx.bannedHash.create({ data: { hash: user.emailHash, type: 'EMAIL', reason: 'Underage' } });
+      await tx.bannedHash.upsert({ where: { hash: user.emailHash }, update: { reason: 'Underage' }, create: { hash: user.emailHash, type: 'EMAIL', reason: 'Underage' } });
       // Delete user data. To bypass constraints gracefully, we might just update status and scramble data.
       // But prompt says "deactivates and deletes the account data".
       // We'll delete profile, preferences, consents, then delete user. (Cascade handled if set in Prisma, else manual).
@@ -200,7 +200,7 @@ router.post('/:id/action', async (req: Request, res: Response) => {
   };
 
   try {
-    await withAudit(prisma, req.adminId as string, \`REPORT_ACTION_\${action.toUpperCase()}\`, report.id, reason, performAction);
+    await withAudit(prisma, req.adminId as string, `REPORT_ACTION_${action.toUpperCase()}`, report.id, reason, performAction);
     return res.json({ message: 'Action applied' });
   } catch(e: any) {
     return res.status(400).json({ error: e.message });

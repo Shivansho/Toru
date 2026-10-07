@@ -53,7 +53,7 @@ router.post('/:id/settings', async (req: Request, res: Response) => {
     
     for (const sample of data.mustPassSamples) {
       if (!studentRegex.test(sample) && !staffRegex.test(sample)) {
-        return res.status(400).json({ error: \`Must pass sample failed: \${sample}\` });
+        return res.status(400).json({ error: `Must pass sample failed: ${sample}` });
       }
     }
 
@@ -136,7 +136,7 @@ router.post('/:id/revert', async (req: Request, res: Response) => {
   };
 
   try {
-    const reverted = await withAudit(prisma, req.adminId as string, 'REVERT_COLLEGE_SETTINGS', req.params.id, \`Reverted to version \${version.id}\`, performAction);
+    const reverted = await withAudit(prisma, req.adminId as string, 'REVERT_COLLEGE_SETTINGS', req.params.id, `Reverted to version ${version.id}`, performAction);
     return res.json(reverted);
   } catch(e: any) {
     return res.status(500).json({ error: e.message });

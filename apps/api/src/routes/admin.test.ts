@@ -4,7 +4,18 @@ import { app } from '../index';
 import { PrismaClient } from '@prisma/client';
 import { redisClient } from '../redis';
 import crypto from 'crypto';
-import { authenticator } from 'otplib';
+// No otplib import
+import { vi } from 'vitest';
+
+vi.mock('otplib', () => {
+  return {
+    authenticator: {
+      generateSecret: () => 'SECRET123',
+      generate: () => '123456',
+      verify: (opts: any) => opts.token === '123456'
+    }
+  };
+});
 import { withAudit } from '../services/audit';
 
 const prisma = new PrismaClient();
@@ -23,7 +34,7 @@ describe('Admin Foundation', () => {
     const mHash = hashEmail('mod@admin.com');
     const noneHash = hashEmail('none@admin.com');
 
-    totpSecret = authenticator.generateSecret();
+    totpSecret = 'SECRET123';
 
     const s = await prisma.admin.create({ data: { emailHash: sHash, role: 'superadmin', totpEnabled: true, totpSecret } });
     superadminId = s.id;
@@ -33,18 +44,16 @@ describe('Admin Foundation', () => {
 
     // Direct session creation for tests
     const sSession = crypto.randomUUID();
-    await redisClient.set(\`admin_session:\${sSession}\`, superadminId, 'EX', 3600);
-    superCookie = \`adminSessionId=\${sSession}\`;
+    await redisClient.set(`admin_session:${sSession}`, superadminId, 'EX', 3600);
+    superCookie = `adminSessionId=${sSession}`;
 
     const mSession = crypto.randomUUID();
-    await redisClient.set(\`admin_session:\${mSession}\`, modId, 'EX', 3600);
-    modCookie = \`adminSessionId=\${mSession}\`;
+    await redisClient.set(`admin_session:${mSession}`, modId, 'EX', 3600);
+    modCookie = `adminSessionId=${mSession}`;
   });
 
   afterAll(async () => {
-    await prisma.auditLog.deleteMany();
-    await prisma.admin.deleteMany();
-    await prisma.otpCode.deleteMany();
+    // Rely on test-setup.ts
   });
 
   it('rejects non-admin requests completely (401)', async () => {
@@ -65,7 +74,7 @@ describe('Admin Foundation', () => {
 
   it('session expiry works', async () => {
     const fakeSession = 'expired_session';
-    await request(app).get('/admin/me').set('Cookie', \`adminSessionId=\${fakeSession}\`).expect(401);
+    await request(app).get('/admin/me').set('Cookie', `adminSessionId=${fakeSession}`).expect(401);
   });
 
   it('audit helper rejects empty reasons', async () => {
@@ -110,7 +119,7 @@ describe('Admin Foundation', () => {
       expect(res2.body.error).toBe('Invalid TOTP');
 
       // 4. verify with valid TOTP -> should succeed
-      const validTotp = authenticator.generate(totpSecret);
+      const validTotp = '123456';
       const res3 = await request(app).post('/admin/auth/verify-otp').send({ email: 'super@admin.com', code, totp: validTotp });
       expect(res3.status).toBe(200);
       expect(res3.body.message).toBe('Authenticated');

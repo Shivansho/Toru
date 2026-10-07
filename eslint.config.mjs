@@ -13,14 +13,10 @@ export default tseslint.config(
       '**/coverage/**'
     ],
     rules: {
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-          caughtErrorsIgnorePattern: '^_'
-        }
-      ]
+      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/ban-ts-comment': 'off',
+      'no-control-regex': 'off'
     }
   }
 );

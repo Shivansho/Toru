@@ -10,7 +10,7 @@ export default function ReportsQueue() {
 
   const fetchReports = async () => {
     setLoading(true);
-    const res = await fetch(\`/api/admin/reports?status=\${statusFilter}\`);
+    const res = await fetch(`/api/admin/reports?status=${statusFilter}`);
     if (res.ok) {
       setReports(await res.json());
     }
@@ -86,17 +86,17 @@ export default function ReportsQueue() {
                   <td className="p-4 font-mono text-sm">{r.reason}</td>
                   <td className="p-4 text-sm font-bold">{r.reported?.alias} <span className="text-slate-500 font-normal text-xs ml-2">ID: {r.reported?.internalId?.slice(0,8)}</span></td>
                   <td className="p-4">
-                    <span className={\`text-xs font-bold px-2 py-1 rounded \${r.reported?.priorReportsCount > 2 ? 'bg-orange-900 text-orange-200' : 'bg-slate-800 text-slate-300'}\`}>
+                    <span className={`text-xs font-bold px-2 py-1 rounded ${r.reported?.priorReportsCount > 2 ? 'bg-orange-900 text-orange-200' : 'bg-slate-800 text-slate-300'}`}>
                       {r.reported?.priorReportsCount}
                     </span>
                   </td>
                   <td className="p-4">
-                    <span className={\`text-sm font-bold \${isBreachingSLA ? 'text-red-500' : 'text-slate-400'}\`}>
+                    <span className={`text-sm font-bold ${isBreachingSLA ? 'text-red-500' : 'text-slate-400'}`}>
                       {hoursWaiting}h
                     </span>
                   </td>
                   <td className="p-4">
-                    <Link href={\`/admin/reports/\${r.id}\`} className="text-blue-500 hover:text-blue-400 font-bold text-sm">
+                    <Link href={`/admin/reports/${r.id}`} className="text-blue-500 hover:text-blue-400 font-bold text-sm">
                       Review →
                     </Link>
                   </td>

@@ -32,7 +32,7 @@ export class HttpClassifier implements ToxicityClassifier {
     try {
       const res = await fetch(this.endpoint, {
         method: 'POST',
-        headers: { 'Authorization': \`Bearer \${this.apiKey}\`, 'Content-Type': 'application/json' },
+        headers: { 'Authorization': `Bearer ${this.apiKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ text })
       });
       if (!res.ok) return [];
@@ -58,8 +58,8 @@ export async function refreshWordlists(prisma: PrismaClient) {
     // Use word boundaries. To handle Hinglish and variants, the admin should define the terms carefully.
     const term = item.term.toLowerCase();
     // Escape regex, then allow optional repeated chars: 'bad' -> /b+a+d+/
-    const regexStr = term.split('').map(c => \`\${c.replace(/[-\/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&')}+\`).join('[\\\\W_]*');
-    const reg = new RegExp(\`\\\\b\${regexStr}\\\\b\`, 'i');
+    const regexStr = term.split('').map(c => `${c.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}+`).join('[\\W_]*');
+    const reg = new RegExp(`\\b${regexStr}\\b`, 'i');
 
     if (item.kind === 'BLOCK') wordlistCache[item.collegeId].blocked.push(reg);
     else if (item.kind === 'REVIEW') wordlistCache[item.collegeId].review.push(reg);

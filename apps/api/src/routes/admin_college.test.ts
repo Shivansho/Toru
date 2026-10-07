@@ -15,8 +15,8 @@ describe('Admin College Settings', () => {
   beforeAll(async () => {
     const s = await prisma.admin.create({ data: { emailHash: hashEmail('super@settings.com'), role: 'superadmin' } });
     const sSession = crypto.randomUUID();
-    await redisClient.set(\`admin_session:\${sSession}\`, s.id, 'EX', 3600);
-    superCookie = \`adminSessionId=\${sSession}\`;
+    await redisClient.set(`admin_session:${sSession}`, s.id, 'EX', 3600);
+    superCookie = `adminSessionId=${sSession}`;
 
     const col = await prisma.college.create({ 
       data: { 
@@ -35,10 +35,7 @@ describe('Admin College Settings', () => {
   });
 
   afterAll(async () => {
-    await prisma.auditLog.deleteMany();
-    await prisma.collegeSettingsVersion.deleteMany();
-    await prisma.college.deleteMany();
-    await prisma.admin.deleteMany();
+    // Rely on test-setup.ts
   });
 
   it('rejects invalid settings via zod', async () => {
@@ -53,7 +50,7 @@ describe('Admin College Settings', () => {
       mustPassSamples: []
     };
 
-    const res = await request(app).post(\`/admin/colleges/\${collegeId}/settings\`).set('Cookie', superCookie).send(invalidPayload);
+    const res = await request(app).post(`/admin/colleges/${collegeId}/settings`).set('Cookie', superCookie).send(invalidPayload);
     expect(res.status).toBe(400);
     expect(res.body.error).toBe('Validation failed');
   });
@@ -70,7 +67,7 @@ describe('Admin College Settings', () => {
       mustPassSamples: ['alice@s.edu'] // Will fail the new student pattern
     };
 
-    const res = await request(app).post(\`/admin/colleges/\${collegeId}/settings\`).set('Cookie', superCookie).send(payload);
+    const res = await request(app).post(`/admin/colleges/${collegeId}/settings`).set('Cookie', superCookie).send(payload);
     expect(res.status).toBe(400);
     expect(res.body.error).toContain('Must pass sample failed: alice@s.edu');
   });
@@ -87,7 +84,7 @@ describe('Admin College Settings', () => {
       mustPassSamples: ['alice@s.edu']
     };
 
-    const res = await request(app).post(\`/admin/colleges/\${collegeId}/settings\`).set('Cookie', superCookie).send(payload);
+    const res = await request(app).post(`/admin/colleges/${collegeId}/settings`).set('Cookie', superCookie).send(payload);
     expect(res.status).toBe(200);
 
     const versions = await prisma.collegeSettingsVersion.findMany({ where: { collegeId } });
@@ -102,7 +99,7 @@ describe('Admin College Settings', () => {
     const versions = await prisma.collegeSettingsVersion.findMany({ where: { collegeId } });
     const versionId = versions[0].id;
 
-    const res = await request(app).post(\`/admin/colleges/\${collegeId}/revert\`).set('Cookie', superCookie).send({ versionId });
+    const res = await request(app).post(`/admin/colleges/${collegeId}/revert`).set('Cookie', superCookie).send({ versionId });
     expect(res.status).toBe(200);
 
     const col = await prisma.college.findUnique({ where: { id: collegeId } });

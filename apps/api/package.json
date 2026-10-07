@@ -25,7 +25,8 @@
     "pino-http": "^9.0.0",
     "qrcode": "^1.5.4",
     "rate-limit-redis": "^6.0.1",
-    "socket.io": "^4.8.4"
+    "socket.io": "^4.8.4",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/cookie": "^1.0.0",

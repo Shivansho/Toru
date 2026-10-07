@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import { app } from '../index';
 import { PrismaClient } from '@prisma/client';
@@ -92,19 +92,19 @@ describe('Onboarding Endpoints', () => {
     });
 
     it('17 years and 364 days', async () => {
+      const freshUser17 = await prisma.user.create({
+        data: { collegeId: user18.collegeId, emailEncrypted: 'enc', emailHash: 'hash17', joiningYear: 2024, branch: 'cs', programme: 'cs' }
+      });
+      const s17 = await createSession(freshUser17.id);
+
       // Tomorrow they turn 18, so today they are 17
       const res = await request(app)
         .post('/onboarding/age-check')
-        .set('Cookie', [`sessionId=${sessionAlias}`])
+        .set('Cookie', [`sessionId=${s17}`])
         .send({ dob: '2008-10-08', deviceHash: 'devUnder' });
       
-      expect(res.status).toBe(200); // Actually wait, in route it returns 200 JSON with neutral message, or 429 later.
-      // Wait, in my route it returns `res.json({ message: 'Based on the provided information, we cannot activate this account.' })`.
-      // So status 200!
+      expect(res.status).toBe(200); 
       expect(res.body.message).toContain('we cannot activate this account');
-      
-      const u = await prisma.user.findUnique({ where: { id: userTestAlias.id } });
-      // Was already true from setup, let's test with a fresh user
     });
 
     it('cooldown behaviour', async () => {

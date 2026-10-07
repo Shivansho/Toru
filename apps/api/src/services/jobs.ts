@@ -81,7 +81,7 @@ export async function runRetentionJob(dryRun = false, force = false): Promise<an
 
       if (globalToDelete.length > 0) {
          if (!force && globalTotal > 0 && (globalToDelete.length / globalTotal) > SAFETY_PERCENTAGE) {
-           throw new Error(\`Safety limit exceeded for GlobalMessages college \${college.id}\`);
+           throw new Error(`Safety limit exceeded for GlobalMessages college ${college.id}`);
          }
          report.push({ type: 'GlobalMessage', college: college.id, count: globalToDelete.length });
          if (!dryRun) {
@@ -107,7 +107,7 @@ export async function runRetentionJob(dryRun = false, force = false): Promise<an
 
       if (sessionIds.length > 0) {
         if (!force && sessionTotal > 0 && (sessionIds.length / sessionTotal) > SAFETY_PERCENTAGE) {
-           throw new Error(\`Safety limit exceeded for ChatSession college \${college.id}\`);
+           throw new Error(`Safety limit exceeded for ChatSession college ${college.id}`);
         }
         
         const messagesCount = await prisma.sessionMessage.count({ where: { sessionId: { in: sessionIds } } });
@@ -133,7 +133,7 @@ export async function runRetentionJob(dryRun = false, force = false): Promise<an
           report.push({ type: 'AliasRotation', college: college.id, count: aliases.length });
           if (!dryRun) {
             for (const profile of aliases) {
-              const newAlias = \`Alias_\${Math.floor(Math.random() * 9000) + 1000}\`; // Simplified generator
+              const newAlias = `Alias_${Math.floor(Math.random() * 9000) + 1000}`; // Simplified generator
               await prisma.profile.update({
                 where: { userId: profile.userId },
                 data: { alias: newAlias, aliasRotatedAt: new Date() }

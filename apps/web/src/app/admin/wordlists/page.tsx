@@ -56,7 +56,7 @@ export default function WordlistAdmin() {
       const data = await res.json();
       setCsv('');
       fetchLists();
-      setMsg(\`Bulk import successful. \${data.added} terms added.\`);
+      setMsg(`Bulk import successful. ${data.added} terms added.`);
     } else {
       setError((await res.json()).error);
     }
@@ -76,7 +76,7 @@ export default function WordlistAdmin() {
   };
 
   const handleDelete = async (id: string) => {
-    const res = await fetch(\`/api/admin/wordlists/\${id}\`, { method: 'DELETE' });
+    const res = await fetch(`/api/admin/wordlists/${id}`, { method: 'DELETE' });
     if (res.ok) fetchLists();
   };
 
@@ -202,7 +202,7 @@ export default function WordlistAdmin() {
                 <tr key={item.id} className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
                   <td className="p-4 font-mono font-bold text-sm text-slate-800 dark:text-slate-200">{item.term}</td>
                   <td className="p-4">
-                    <span className={\`text-xs font-bold px-2 py-1 rounded \${item.kind === 'BLOCK' ? 'bg-red-900 text-red-200' : item.kind === 'ALLOWED' ? 'bg-green-900 text-green-200' : 'bg-yellow-900 text-yellow-200'}\`}>
+                    <span className={`text-xs font-bold px-2 py-1 rounded ${item.kind === 'BLOCK' ? 'bg-red-900 text-red-200' : item.kind === 'ALLOWED' ? 'bg-green-900 text-green-200' : 'bg-yellow-900 text-yellow-200'}`}>
                       {item.kind}
                     </span>
                   </td>

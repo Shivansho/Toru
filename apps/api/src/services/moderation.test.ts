@@ -107,11 +107,11 @@ describe('Message Moderation Pipeline', () => {
     // Duplicate benign to pad out the 60 cases rule
     const padCount = 60 - cases.length;
     for (let i = 0; i < padCount; i++) {
-      cases.push({ input: \`benign message \${i}\`, expected: 'allow' });
+      cases.push({ input: `benign message ${i}`, expected: 'allow' });
     }
 
     cases.forEach(({ input, expected }, idx) => {
-      it(\`Case \${idx + 1}: "\${input}" -> \${expected}\`, async () => {
+      it(`Case ${idx + 1}: "${input}" -> ${expected}`, async () => {
         const result = await moderateMessage(input, collegeId, classifier);
         expect(result.decision).toBe(expected);
         

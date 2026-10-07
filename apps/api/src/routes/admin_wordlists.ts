@@ -36,7 +36,7 @@ router.post('/', async (req: Request, res: Response) => {
   };
 
   try {
-    const item = await withAudit(prisma, req.adminId as string, 'ADD_WORDLIST_TERM', collegeId, \`Added \${kind} term: \${term}\`, performAction);
+    const item = await withAudit(prisma, req.adminId as string, 'ADD_WORDLIST_TERM', collegeId, `Added ${kind} term: ${term}`, performAction);
     return res.json(item);
   } catch (e: any) {
     return res.status(500).json({ error: e.message });
@@ -52,7 +52,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
   };
 
   try {
-    await withAudit(prisma, req.adminId as string, 'DELETE_WORDLIST_TERM', item.collegeId, \`Deleted \${item.kind} term: \${item.term}\`, performAction);
+    await withAudit(prisma, req.adminId as string, 'DELETE_WORDLIST_TERM', item.collegeId, `Deleted ${item.kind} term: ${item.term}`, performAction);
     return res.json({ message: 'Deleted' });
   } catch (e: any) {
     return res.status(500).json({ error: e.message });
@@ -81,7 +81,7 @@ router.post('/import', async (req: Request, res: Response) => {
   };
 
   try {
-    await withAudit(prisma, req.adminId as string, 'IMPORT_WORDLIST', collegeId, \`Imported \${added} terms\`, performAction);
+    await withAudit(prisma, req.adminId as string, 'IMPORT_WORDLIST', collegeId, `Imported ${added} terms`, performAction);
     return res.json({ message: 'Imported', added });
   } catch(e: any) {
     return res.status(400).json({ error: e.message });

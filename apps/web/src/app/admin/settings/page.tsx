@@ -27,7 +27,7 @@ export default function CollegeSettingsAdmin() {
 
   const fetchSettings = async () => {
     if (!collegeId) return;
-    const res = await fetch(\`/api/admin/colleges/\${collegeId}\`);
+    const res = await fetch(`/api/admin/colleges/${collegeId}`);
     if (res.ok) {
       const data = await res.json();
       setSettings(data);
@@ -60,7 +60,7 @@ export default function CollegeSettingsAdmin() {
       featureFlags: { dailyAliasRotation }
     };
 
-    const res = await fetch(\`/api/admin/colleges/\${collegeId}/settings\`, {
+    const res = await fetch(`/api/admin/colleges/${collegeId}/settings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -76,7 +76,7 @@ export default function CollegeSettingsAdmin() {
   };
 
   const handleTest = async () => {
-    const res = await fetch(\`/api/admin/colleges/test-pattern\`, {
+    const res = await fetch(`/api/admin/colleges/test-pattern`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sample: testSample, studentPattern, staffPattern })
@@ -87,7 +87,7 @@ export default function CollegeSettingsAdmin() {
   };
 
   const handleRevert = async (versionId: string) => {
-    const res = await fetch(\`/api/admin/colleges/\${collegeId}/revert\`, {
+    const res = await fetch(`/api/admin/colleges/${collegeId}/revert`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ versionId })

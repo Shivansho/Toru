@@ -94,7 +94,7 @@ router.get('/audit', async (req: Request, res: Response) => {
   if (format === 'csv') {
     const lines = ['id,adminRole,action,target,reason,createdAt'];
     logs.forEach(l => {
-      lines.push(\`\${l.id},\${l.admin?.role},\${l.action},\${l.target},"\${l.reason.replace(/"/g, '""')}",\${l.createdAt.toISOString()}\`);
+      lines.push(`${l.id},${l.admin?.role},${l.action},${l.target},"${l.reason.replace(/"/g, '""')}",${l.createdAt.toISOString()}`);
     });
     res.header('Content-Type', 'text/csv');
     res.attachment('audit_log.csv');
@@ -166,9 +166,9 @@ router.post('/users/:id/reveal/request', requireRole('superadmin'), async (req: 
     
     if (requiresApproval) {
       // In prod: dispatch email to all other superadmins
-      console.log(\`[ALERT] Superadmin \${req.adminId} requested email reveal for \${targetUserId}. Approval required.\`);
+      console.log(`[ALERT] Superadmin ${req.adminId} requested email reveal for ${targetUserId}. Approval required.`);
     } else {
-      console.log(\`[ALERT] Superadmin \${req.adminId} executed unilateral email reveal for \${targetUserId}.\`);
+      console.log(`[ALERT] Superadmin ${req.adminId} executed unilateral email reveal for ${targetUserId}.`);
     }
     return reqRow;
   };
@@ -198,7 +198,7 @@ router.post('/reveals/:id/approve', requireRole('superadmin'), async (req: Reque
   };
 
   try {
-    await withAudit(prisma, req.adminId as string, 'APPROVE_EMAIL_REVEAL', revealReq.targetUserId, \`Approved request \${reqId}\`, performAction);
+    await withAudit(prisma, req.adminId as string, 'APPROVE_EMAIL_REVEAL', revealReq.targetUserId, `Approved request ${reqId}`, performAction);
     return res.json({ message: 'Approved' });
   } catch(e: any) {
     return res.status(500).json({ error: e.message });
@@ -227,7 +227,8 @@ router.get('/users/:id/reveal/view', requireRole('superadmin'), async (req: Requ
   // Mark as EXPIRED immediately so it cannot be viewed again
   await prisma.emailRevealRequest.update({ where: { id: revealReq.id }, data: { status: 'EXPIRED' } });
 
-  const email = decrypt(target.emailEncrypted);
+  const DATA_ENCRYPTION_KEY = process.env.DATA_ENCRYPTION_KEY || '12345678901234567890123456789012';
+  const email = decrypt(target.emailEncrypted, DATA_ENCRYPTION_KEY);
   
   // Final heavy audit
   await prisma.auditLog.create({
@@ -235,7 +236,7 @@ router.get('/users/:id/reveal/view', requireRole('superadmin'), async (req: Requ
       adminId: req.adminId as string,
       action: 'VIEWED_REVEALED_EMAIL',
       target: targetUserId,
-      reason: \`Displayed under request \${revealReq.id}\`
+      reason: `Displayed under request ${revealReq.id}`
     }
   });
 

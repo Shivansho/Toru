@@ -34,7 +34,7 @@ router.post('/auth/request-otp', async (req: Request, res: Response) => {
       create: { emailHash, codeHash, expiresAt, attempts: 0 }
     });
 
-    console.log(\`[ADMIN OTP] Code for \${email}: \${code}\`);
+    console.log(`[ADMIN OTP] Code for ${email}: ${code}`);
     // In prod, this would actually send an email
   }
 
@@ -77,7 +77,7 @@ router.post('/auth/verify-otp', async (req: Request, res: Response) => {
 
   // Issue short-lived admin session (1 hour)
   const sessionId = crypto.randomUUID();
-  await redisClient.set(\`admin_session:\${sessionId}\`, admin.id, 'EX', 3600);
+  await redisClient.set(`admin_session:${sessionId}`, admin.id, 'EX', 3600);
 
   res.cookie('adminSessionId', sessionId, {
     httpOnly: true,
@@ -105,14 +105,14 @@ router.post('/totp/enroll', async (req: Request, res: Response) => {
   const uri = authenticator.keyuri(admin!.emailHash || 'admin', 'Toru Admin', secret);
 
   // Temporarily store secret in redis until verified
-  await redisClient.set(\`totp_enroll:\${req.adminId}\`, secret, 'EX', 600);
+  await redisClient.set(`totp_enroll:${req.adminId}`, secret, 'EX', 600);
 
   return res.json({ secret, uri });
 });
 
 router.post('/totp/verify', async (req: Request, res: Response) => {
   const { token } = req.body;
-  const secret = await redisClient.get(\`totp_enroll:\${req.adminId}\`);
+  const secret = await redisClient.get(`totp_enroll:${req.adminId}`);
   
   if (!secret) return res.status(400).json({ error: 'Enrollment expired' });
 
@@ -124,14 +124,14 @@ router.post('/totp/verify', async (req: Request, res: Response) => {
     data: { totpEnabled: true, totpSecret: secret }
   });
 
-  await redisClient.del(\`totp_enroll:\${req.adminId}\`);
+  await redisClient.del(`totp_enroll:${req.adminId}`);
   return res.json({ message: 'TOTP Enrolled' });
 });
 
 router.post('/logout', async (req: Request, res: Response) => {
   const sessionId = req.cookies.adminSessionId;
   if (sessionId) {
-    await redisClient.del(\`admin_session:\${sessionId}\`);
+    await redisClient.del(`admin_session:${sessionId}`);
   }
   res.clearCookie('adminSessionId');
   return res.json({ message: 'Logged out' });

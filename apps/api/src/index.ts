@@ -46,7 +46,7 @@ let server: ReturnType<typeof httpServer.listen>;
 
 if (process.env.NODE_ENV !== 'test') {
   server = httpServer.listen(PORT, () => {
-    logger.info(\`Server running on port \${PORT}\`);
+    logger.info(`Server running on port ${PORT}`);
   });
 
   // Graceful shutdown

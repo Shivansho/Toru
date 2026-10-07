@@ -19,7 +19,7 @@ export const requireAdmin = async (req: Request, res: Response, next: NextFuncti
   }
 
   try {
-    const adminId = await redisClient.get(\`admin_session:\${adminSessionId}\`);
+    const adminId = await redisClient.get(`admin_session:${adminSessionId}`);
     if (!adminId) {
       return res.status(401).json({ error: 'Session expired' });
     }
@@ -30,7 +30,7 @@ export const requireAdmin = async (req: Request, res: Response, next: NextFuncti
     }
 
     // Renew idle timeout
-    await redisClient.expire(\`admin_session:\${adminSessionId}\`, 3600);
+    await redisClient.expire(`admin_session:${adminSessionId}`, 3600);
 
     req.adminId = admin.id;
     req.adminRole = admin.role;

@@ -31,6 +31,8 @@ describe('Retention Jobs', () => {
 
     // Create expired Sanction
     await prisma.sanction.create({ data: { userId: userA.id, type: 'MUTE', reason: 'Test', expiresAt: new Date(Date.now() - 1000) } });
+    await prisma.sanction.create({ data: { userId: userA.id, type: 'MUTE', reason: 'Test2', expiresAt: new Date(Date.now() + 1000000) } });
+    await prisma.sanction.create({ data: { userId: userA.id, type: 'MUTE', reason: 'Test3', expiresAt: new Date(Date.now() + 1000000) } });
 
     // Global messages
     const gOld1 = await prisma.globalMessage.create({ data: { collegeId: college.id, userId: userA.id, body: 'old1', createdAt: new Date(Date.now() - 31 * 24 * 60 * 60 * 1000) } });
@@ -89,7 +91,7 @@ describe('Retention Jobs', () => {
     expect(otp).toBe(0); // Deleted
     
     const sanc = await prisma.sanction.count();
-    expect(sanc).toBe(0); // Deleted
+    expect(sanc).toBe(2); // Kept 2 unexpired
 
     // userA should be ACTIVE again
     const u = await prisma.user.findUnique({ where: { id: userA.id } });
@@ -138,10 +140,9 @@ describe('Retention Jobs', () => {
   });
 
   it('safety limit blocks accidental mass deletion', async () => {
-    // We add 100 expired OTPs, and only 2 total OTPs exist. That means 100/102 > 50%.
     await prisma.otpCode.createMany({
-      data: Array.from({ length: 10 }).map((_, i) => ({
-        emailHash: \`j_fake_\${i}\`,
+      data: Array.from({ length: 20 }).map((_, i) => ({
+        emailHash: `j_fake_exp_${i}`,
         codeHash: '123',
         expiresAt: new Date(Date.now() - 1000)
       }))
