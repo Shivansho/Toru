@@ -28,12 +28,12 @@ docker compose up -d
 With the database running, you need to apply the schemas (tables) defined in the Prisma ORM.
 
 ```powershell
-pnpm -F api exec prisma db push
+pnpm exec prisma db push
 ```
 
 If you want to visually inspect the data in your database, you can open Prisma Studio:
 ```powershell
-pnpm -F api exec prisma studio
+pnpm exec prisma studio
 ```
 *(This will open a UI in your browser at `http://localhost:5555`)*
 
