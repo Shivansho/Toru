@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, FormEvent } from 'react';
 import io, { Socket } from 'socket.io-client';
-import { GlobalMessagePayload, SessionMessagePayload } from '@shared/core';
+import { GlobalMessagePayload, SessionMessagePayload, LEGAL_CONFIG } from '@shared/core';
 
 type AppState = 'HOME' | 'GLOBAL_CHAT' | 'SEARCHING' | 'MATCH_CHAT' | 'MATCH_ENDED';
 type YearFilter = 'ANY' | 'SAME_YEAR';
@@ -155,6 +155,10 @@ export default function MainApp() {
         >
           Enter Global Chat ({onlineCount} online)
         </button>
+
+        <div className="mt-8 text-xs text-slate-500 text-center px-4">
+          {LEGAL_CONFIG.anonymityCopy.disclaimer}
+        </div>
       </div>
     );
   }
@@ -198,14 +202,21 @@ export default function MainApp() {
             <button onClick={handleSkip} className="bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-sm transition">Skip</button>
             <button onClick={handleLeave} className="bg-red-900/50 hover:bg-red-900 px-3 py-1 rounded text-sm transition text-red-200">End</button>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <button 
+              className="text-xs text-blue-400 hover:text-blue-300"
+              onClick={() => alert(LEGAL_CONFIG.chatNotices.selfHarmSupport)}
+            >
+              Help
+            </button>
             <button className="text-xs text-orange-400 hover:text-orange-300">Report</button>
             <button className="text-xs text-red-400 hover:text-red-300">Block</button>
           </div>
         </div>
 
-        <div className="bg-emerald-900/40 text-emerald-300 text-xs p-2 text-center border-b border-emerald-900/50">
-          Be respectful. Chats are stored briefly for safety and can be reported.
+        <div className="bg-emerald-900/40 text-emerald-300 text-xs p-3 text-center border-b border-emerald-900/50 flex flex-col gap-1">
+          <span className="font-semibold">{LEGAL_CONFIG.chatNotices.startBanner}</span>
+          <span>{LEGAL_CONFIG.chatNotices.reportReminder}</span>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">

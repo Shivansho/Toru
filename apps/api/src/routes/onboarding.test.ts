@@ -159,16 +159,35 @@ describe('Onboarding Endpoints', () => {
   });
 
   describe('Consent', () => {
-    it('records consent with version', async () => {
-      const res = await request(app)
+    it('records consent with version and /auth/me returns hasConsented correctly', async () => {
+      // Initially false
+      const res0 = await request(app).get('/auth/me').set('Cookie', [`sessionId=${sessionAlias}`]);
+      expect(res0.body.hasConsented).toBe(false);
+
+      // Consent to terms
+      await request(app)
         .post('/onboarding/consent')
         .set('Cookie', [`sessionId=${sessionAlias}`])
-        .send({ document: 'terms', version: '1.0' });
-      expect(res.status).toBe(200);
+        .send({ document: 'terms', version: 'v1.0' });
+      
+      const res1 = await request(app).get('/auth/me').set('Cookie', [`sessionId=${sessionAlias}`]);
+      expect(res1.body.hasConsented).toBe(false); // Still missing privacy and guidelines
 
-      const c = await prisma.consent.findFirst({ where: { userId: userTestAlias.id } });
-      expect(c?.document).toBe('terms');
-      expect(c?.version).toBe('1.0');
+      // Consent to rest
+      await request(app).post('/onboarding/consent').set('Cookie', [`sessionId=${sessionAlias}`]).send({ document: 'privacy', version: 'v1.0' });
+      await request(app).post('/onboarding/consent').set('Cookie', [`sessionId=${sessionAlias}`]).send({ document: 'guidelines', version: 'v1.0' });
+
+      const res2 = await request(app).get('/auth/me').set('Cookie', [`sessionId=${sessionAlias}`]);
+      expect(res2.body.hasConsented).toBe(true);
+
+      // If version changes, should require re-consent (simulate by sending wrong version)
+      await prisma.consent.updateMany({
+        where: { userId: userTestAlias.id, document: 'terms' },
+        data: { version: 'v0.9' }
+      });
+
+      const res3 = await request(app).get('/auth/me').set('Cookie', [`sessionId=${sessionAlias}`]);
+      expect(res3.body.hasConsented).toBe(false);
     });
   });
 });

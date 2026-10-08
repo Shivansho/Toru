@@ -14,9 +14,10 @@ Sentry.init({
         if (typeof data === 'string') {
           try { data = JSON.parse(data); } catch (e) {}
         }
-        if (typeof data === 'object') {
-          if (data.email) data.email = '[Scrubbed]';
-          if (data.body) data.body = '[Scrubbed]';
+        if (typeof data === 'object' && data !== null) {
+          const dataObj = data as Record<string, any>;
+          if (dataObj.email) dataObj.email = '[Scrubbed]';
+          if (dataObj.body) dataObj.body = '[Scrubbed]';
         }
         event.request.data = data;
       }

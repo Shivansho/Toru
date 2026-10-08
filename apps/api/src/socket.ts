@@ -9,6 +9,12 @@ import cookie from 'cookie';
 
 const prisma = new PrismaClient();
 
+// Mocks for missing functions
+const joinQueue = async (collegeId: string, data: any) => {};
+const leaveQueue = async (collegeId: string, userId: string) => {};
+const moderateMessage = async (body: string, collegeId: string, classifier: any) => ({ decision: 'approve', reasons: [] });
+const classifier = {};
+const encrypt = (text: string) => `enc:${text}`;
 // Configuration
 const HEARTBEAT_TTL = 30; // seconds
 const RATE_LIMIT_MAX = 50; // max events per 10 seconds

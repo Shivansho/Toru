@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient, UserStatus } from '@prisma/client';
-import { parseCollegeEmail } from '@shared/core';
+import { parseCollegeEmail, LEGAL_VERSIONS } from '@shared/core';
 import { hashEmail, encrypt } from '../crypto';
 import { sendOtpEmail } from '../mailer';
 import { generateOtp, hashOtp, verifyOtpHash, createSession, destroySession, destroyAllUserSessions } from '../services/auth';
@@ -178,6 +178,7 @@ router.post('/logout-all', requireAuth, async (req: Request, res: Response) => {
 });
 
 
+
 router.get('/me', requireAuth, async (req: Request, res: Response) => {
   const user = await prisma.user.findUnique({
     where: { id: req.userId },
@@ -185,13 +186,19 @@ router.get('/me', requireAuth, async (req: Request, res: Response) => {
   });
   if (!user) return res.status(401).json({ error: 'User not found' });
 
+  const hasTerms = user.consents.some(c => c.document === 'terms' && c.version === LEGAL_VERSIONS.terms);
+  const hasPrivacy = user.consents.some(c => c.document === 'privacy' && c.version === LEGAL_VERSIONS.privacy);
+  const hasGuidelines = user.consents.some(c => c.document === 'guidelines' && c.version === LEGAL_VERSIONS.guidelines);
+  
+  const hasConsented = hasTerms && hasPrivacy && hasGuidelines;
+
   return res.json({
     id: user.id,
     ageVerified: user.ageVerified,
     yearCorrected: user.yearCorrected,
     status: user.status,
     hasProfile: !!user.profile,
-    hasConsented: user.consents.length > 0
+    hasConsented
   });
 });
 
