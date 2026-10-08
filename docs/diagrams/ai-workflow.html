@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Project Generation Workflow</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Mermaid JS for Diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans p-10">
+
+    <div class="max-w-5xl mx-auto space-y-12">
+        <header class="text-center">
+            <h1 class="text-4xl font-extrabold text-emerald-400 mb-2">AI Agent Development Workflow</h1>
+            <p class="text-gray-400">How an advanced AI builds a production-ready application iteratively.</p>
+        </header>
+
+        <!-- Diagram 1: AI Prompting Strategy -->
+        <section class="bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-700">
+            <h2 class="text-2xl font-bold text-white mb-6 border-b border-gray-700 pb-2">1. The Iterative Generation Loop</h2>
+            <p class="text-sm text-gray-300 mb-6">AI models perform best when complex tasks are broken down into logical milestones. This is the exact loop used to build Toru.</p>
+            <div class="mermaid flex justify-center">
+                graph TD
+                    A[Phase 1: Project Definition] -->|Generate Schema & Structure| B(Phase 2: Core Backend API)
+                    B -->|Implement Authentication| C(Phase 3: Core Frontend UI)
+                    C -->|Connect Next.js to Express| D(Phase 4: Real-Time Sockets)
+                    D -->|Implement Matchmaking| E(Phase 5: Security & Edge Cases)
+                    E -->|Add Rate Limits, Scrubbing| F(Phase 6: CI/CD & Deploy Docs)
+                    
+                    subgraph The "Agentic" Loop inside each Phase
+                        G[Read Constraints] --> H[Plan & Think]
+                        H --> I[Write Code & Shell Commands]
+                        I --> J[Run Automated Tests]
+                        J -->|Tests Failed| H
+                        J -->|Tests Passed| K[Summarize & Move to Next Phase]
+                    end
+            </div>
+        </section>
+
+        <!-- Diagram 2: Context Management -->
+        <section class="bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-700">
+            <h2 class="text-2xl font-bold text-white mb-6 border-b border-gray-700 pb-2">2. How the AI Maintains Context</h2>
+            <p class="text-sm text-gray-300 mb-6">Large codebases exceed an AI's token limit. Instead of reading the whole project, the AI searches dynamically.</p>
+            <div class="mermaid flex justify-center">
+                sequenceDiagram
+                    participant U as User / Prompt
+                    participant AI as Agent (Model)
+                    participant FS as File System Tools
+                    participant T as Terminal
+                    
+                    U->>AI: "Build the Legal Pages"
+                    AI->>FS: grep_search("LEGAL_CONFIG")
+                    FS-->>AI: Returns location in /shared/core.ts
+                    AI->>FS: view_file("/shared/core.ts")
+                    AI->>AI: Internal Analysis (Understands versioning)
+                    AI->>FS: write_to_file("/web/app/legal/page.tsx")
+                    AI->>T: run_command("pnpm run build")
+                    T-->>AI: Build Error: "withSentryConfig is not a function"
+                    AI->>FS: replace_file_content(...) -> Fixes bug
+                    AI->>T: run_command("pnpm run build")
+                    T-->>AI: Success
+                    AI-->>U: "Task Complete"
+            </div>
+        </section>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toru Implementation Workflow</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Mermaid JS for Diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+</head>
+<body class="bg-gray-900 text-gray-100 font-sans p-10">
+
+    <div class="max-w-5xl mx-auto space-y-12">
+        <header class="text-center">
+            <h1 class="text-4xl font-extrabold text-blue-400 mb-2">System Implementation Workflows</h1>
+            <p class="text-gray-400">Detailed breakdowns of the Core Architecture and User Journeys inside Toru.</p>
+        </header>
+
+        <!-- Diagram 1: High Level Architecture -->
+        <section class="bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-700">
+            <h2 class="text-2xl font-bold text-white mb-6 border-b border-gray-700 pb-2">1. High-Level System Architecture</h2>
+            <p class="text-sm text-gray-300 mb-6">This diagram shows how the frontend (Next.js), backend (Express), database (PostgreSQL), and cache (Redis) interact in real-time.</p>
+            <div class="mermaid flex justify-center">
+                graph TD
+                    A[Next.js PWA Client] <-->|HTTP REST / Cookies| B(Express REST API)
+                    A <-->|Socket.IO WebSockets| C(Socket.IO Server)
+                    
+                    B -->|Reads/Writes| D[(PostgreSQL)]
+                    B -->|Publish OTP| E[Mailpit / SMTP]
+                    
+                    C -->|Pub/Sub & Presence| F[(Redis)]
+                    C -->|Store Encrypted Chats| D
+                    
+                    subgraph Backend Infrastructure
+                        B
+                        C
+                    end
+            </div>
+        </section>
+
+        <!-- Diagram 2: Authentication Flow -->
+        <section class="bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-700">
+            <h2 class="text-2xl font-bold text-white mb-6 border-b border-gray-700 pb-2">2. Secure Authentication & Onboarding Workflow</h2>
+            <p class="text-sm text-gray-300 mb-6">Visualizing how an anonymous user is securely authenticated without storing plain-text PII (emails).</p>
+            <div class="mermaid flex justify-center">
+                sequenceDiagram
+                    participant U as User (Next.js)
+                    participant A as API (Express)
+                    participant R as Redis
+                    participant DB as PostgreSQL
+                    participant M as Mail Server
+                    
+                    U->>A: POST /auth/request-otp (email)
+                    A->>DB: Check college domains
+                    A->>A: Hash email (HMAC + Pepper)
+                    A->>DB: Store hashed OTP temporarily
+                    A->>M: Send Plaintext OTP
+                    M-->>U: Receives Email
+                    
+                    U->>A: POST /auth/verify-otp (email, code)
+                    A->>A: Hash email & Hash code
+                    A->>DB: Verify hashes match
+                    alt Success
+                        A->>DB: Upsert User (Using hashed email)
+                        A->>R: Generate Secure Session ID
+                        A-->>U: Set HttpOnly Cookie
+                    else Failure
+                        A-->>U: 401 Unauthorized
+                    end
+            </div>
+        </section>
+
+        <!-- Diagram 3: Matchmaking Workflow -->
+        <section class="bg-gray-800 p-8 rounded-xl shadow-lg border border-gray-700">
+            <h2 class="text-2xl font-bold text-white mb-6 border-b border-gray-700 pb-2">3. Matchmaking & Real-Time Chat</h2>
+            <p class="text-sm text-gray-300 mb-6">The sequence of events when two users are paired anonymously in the matching queue.</p>
+            <div class="mermaid flex justify-center">
+                sequenceDiagram
+                    participant U1 as Student A
+                    participant S as Socket Server
+                    participant R as Redis Queue
+                    participant U2 as Student B
+                    
+                    U1->>S: Emit "match:search" (Filter: SAME_YEAR)
+                    S->>R: Add Student A to Pool
+                    
+                    U2->>S: Emit "match:search" (Filter: ANY)
+                    S->>R: Add Student B to Pool
+                    
+                    Note over S,R: Matcher Cron runs every 100ms
+                    S->>R: Evaluates Pool (A & B are compatible)
+                    S->>S: Create ChatSession in DB
+                    S->>R: Remove A & B from Pool
+                    
+                    S-->>U1: Emit "match:joined"
+                    S-->>U2: Emit "match:joined"
+                    
+                    U1->>S: Emit "session:message" (Hello)
+                    S->>S: Encrypt & Moderate Message
+                    S-->>U2: Emit "session:receive" (Hello)
+            </div>
+        </section>
+    </div>
+
+</body>
+</html>
