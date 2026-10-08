@@ -123,7 +123,7 @@ describe('Admin Foundation', () => {
       const res3 = await request(app).post('/admin/auth/verify-otp').send({ email: 'super@admin.com', code, totp: validTotp });
       expect(res3.status).toBe(200);
       expect(res3.body.message).toBe('Authenticated');
-      expect(res3.headers['set-cookie'][0]).toContain('adminSessionId=');
+      expect(res3.headers['set-cookie'].some((c: string) => c.includes('adminSessionId='))).toBe(true);
     });
   });
 });

@@ -12,8 +12,23 @@ export const requestOtpLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: (req: Request) => {
-    // Rate limit by email to avoid IPv6 warning
     const email = req.body?.email || 'anonymous';
-    return `rl:otp:${email}`;
+    const deviceToken = req.headers['x-device-token'] || 'no-device';
+    return `rl:otp:${email}:${deviceToken}`;
+  },
+});
+
+export const reportLimiter = rateLimit({
+  store: new RedisStore({
+    sendCommand: (...args: string[]) => redisClient.call(...args),
+  }),
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: process.env.NODE_ENV === 'test' ? 100 : 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: Request) => {
+    const userId = (req as any).user?.id || 'anon';
+    const deviceToken = req.headers['x-device-token'] || 'no-device';
+    return `rl:report:${userId}:${deviceToken}`;
   },
 });

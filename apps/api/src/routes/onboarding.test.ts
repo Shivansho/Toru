@@ -12,7 +12,7 @@ describe('Onboarding Endpoints', () => {
   let userTestAlias: any;
   let session18: string;
   let sessionAlias: string;
-  let deviceHash = 'dev123';
+  const deviceHash = 'dev123';
 
   beforeAll(async () => {
     try {

@@ -17,8 +17,18 @@ const RATE_LIMIT_WINDOW = 10; // seconds
 export function setupSocketIO(httpServer: HttpServer) {
   const io = new SocketIOServer<any, ServerEvents, any, any>(httpServer, {
     cors: {
-      origin: true,
+      origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : 'http://localhost:3000',
       credentials: true
+    },
+    allowRequest: (req, callback) => {
+      const origin = req.headers.origin;
+      const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000'];
+      
+      if (process.env.NODE_ENV === 'test' || !origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback('Origin not allowed', false);
+      }
     }
   });
 
@@ -68,6 +78,8 @@ export function setupSocketIO(httpServer: HttpServer) {
 
       (socket as any).userId = user.id;
       (socket as any).collegeId = user.collegeId;
+      (socket as any).deviceToken = socket.request.headers['x-device-token'] || 'no-device';
+      (socket as any).ip = socket.handshake.address;
       
       next();
     } catch (error) {
@@ -98,16 +110,18 @@ export function setupSocketIO(httpServer: HttpServer) {
       const [eventName, data] = packet;
 
       // Rate limit check
-      const userKey = `ratelimit:user:${userId}`;
-      const socketKey = `ratelimit:socket:${socket.id}`;
+      const deviceToken = (socket as any).deviceToken;
+      const ip = (socket as any).ip;
+      const userKey = `ratelimit:socket:user:${userId}`;
+      const deviceKey = `ratelimit:socket:dev:${deviceToken}:${ip}`;
 
       const userReqs = await redisClient.incr(userKey);
       if (userReqs === 1) await redisClient.expire(userKey, RATE_LIMIT_WINDOW);
       
-      const socketReqs = await redisClient.incr(socketKey);
-      if (socketReqs === 1) await redisClient.expire(socketKey, RATE_LIMIT_WINDOW);
+      const devReqs = await redisClient.incr(deviceKey);
+      if (devReqs === 1) await redisClient.expire(deviceKey, RATE_LIMIT_WINDOW);
 
-      if (userReqs > RATE_LIMIT_MAX || socketReqs > RATE_LIMIT_MAX) {
+      if (userReqs > RATE_LIMIT_MAX || devReqs > RATE_LIMIT_MAX) {
         socket.emit('error', { message: 'Rate limit exceeded', code: 'FLOODING' });
         socket.disconnect(true);
         return next(new Error('Rate limit exceeded'));

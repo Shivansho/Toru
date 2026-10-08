@@ -150,7 +150,7 @@ router.post('/:id/action', async (req: Request, res: Response) => {
 
   const performAction = async (tx: any) => {
     let reportStatus = 'RESOLVED';
-    let resolution = `${action}: ${reason}`;
+    const resolution = `${action}: ${reason}`;
 
     if (action === 'dismiss') {
       reportStatus = 'DISMISSED';

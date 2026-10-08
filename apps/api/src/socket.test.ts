@@ -96,78 +96,96 @@ describe('Socket.IO Server', () => {
     });
   });
 
-  it('connects successfully and joins tenant room', (done) => {
-    const client = connectClient(sessionA);
-    client.on('connect', () => {
-      expect(client.connected).toBe(true);
-      client.disconnect();
-      done();
+  it('connects successfully and joins tenant room', async () => {
+    return new Promise<void>((resolve) => {
+      const client = connectClient(sessionA);
+      client.on('connect', () => {
+        expect(client.connected).toBe(true);
+        client.disconnect();
+        resolve();
+      });
     });
   });
 
-  it('enforces tenant isolation (online-count)', (done) => {
-    const clientA = connectClient(sessionA);
-    const clientC = connectClient(sessionC);
+  it('enforces tenant isolation (online-count)', async () => {
+    return new Promise<void>((resolve) => {
+      const clientA = connectClient(sessionA);
+      const clientC = connectClient(sessionC);
 
-    let countsA = 0;
-    
-    clientA.on('online-count', (count) => {
-      countsA = count;
-      if (count === 1) { // Just A
-        // Let's connect B which is in same college
-        const clientB = connectClient(sessionB);
-        clientB.on('connect', () => {
-          // B will increase count for A
-        });
+      clientA.on('online-count', (count) => {
+        if (count === 1) { // Just A
+          const clientB = connectClient(sessionB);
+          clientB.on('connect', () => {});
+          
+          clientA.on('online-count', (countAfterB) => {
+            if (countAfterB === 2) {
+              clientA.disconnect();
+              clientB.disconnect();
+              clientC.disconnect();
+              resolve();
+            }
+          });
+        }
+      });
+
+      clientC.on('online-count', (count) => {
+        expect(count).toBe(1);
+      });
+    });
+  });
+
+  it('disconnects on flooding', async () => {
+    return new Promise<void>((resolve) => {
+      const client = connectClient(sessionA);
+      client.on('connect', () => {
+        for (let i = 0; i < 60; i++) {
+          client.emit('heartbeat');
+        }
+      });
+
+      client.on('error', (err) => {
+        if (err && err.code === 'FLOODING') {
+          expect(err.message).toContain('Rate limit');
+        }
+      });
+
+      client.on('disconnect', (reason) => {
+        expect(reason).toBe('io server disconnect');
+        resolve();
+      });
+    });
+  });
+
+  it('handles match and session events', async () => {
+    return new Promise<void>((resolve) => {
+      const client = connectClient(sessionB);
+      client.on('connect', () => {
+        client.emit('match:search', { filter: 'ANY' });
+        client.emit('session:message', { body: 'hello' });
+        client.emit('session:typing', { isTyping: true });
+        client.emit('match:skip');
+        client.emit('match:cancel');
+        client.emit('match:leave');
         
-        clientA.on('online-count', (countAfterB) => {
-          if (countAfterB === 2) {
-            // Success: A sees B
-            clientA.disconnect();
-            clientB.disconnect();
-            clientC.disconnect();
-            done();
-          }
+        setTimeout(() => {
+          client.disconnect();
+          resolve();
+        }, 500);
+      });
+    });
+  });
+
+  it('rejects second connection (one active connection policy)', async () => {
+    return new Promise<void>((resolve) => {
+      const client1 = connectClient(sessionC);
+      client1.on('connect', () => {
+        const client2 = connectClient(sessionC);
+        client2.on('connect_error', (err) => {
+          expect(err.message).toBe('Session active elsewhere');
+          client1.disconnect();
+          client2.disconnect();
+          resolve();
         });
-      }
-    });
-
-    clientC.on('online-count', (count) => {
-      // C should only ever see 1 (itself) even when A or B connects
-      expect(count).toBe(1);
-    });
-  });
-
-  it('disconnects on flooding', (done) => {
-    const client = connectClient(sessionA);
-    client.on('connect', () => {
-      // Flood with heartbeats
-      for (let i = 0; i < 60; i++) {
-        client.emit('heartbeat');
-      }
-    });
-
-    client.on('error', (err) => {
-      if (err && err.code === 'FLOODING') {
-        expect(err.message).toContain('Rate limit');
-      }
-    });
-
-    client.on('disconnect', (reason) => {
-      expect(reason).toBe('io server disconnect');
-      done();
-    });
-  });
-
-  it('rejects second connection (one active connection policy)', (done) => {
-    const client1 = connectClient(sessionA);
-    client1.on('connect', () => {
-      const client2 = connectClient(sessionA);
-      client2.on('connect_error', (err) => {
-        expect(err.message).toBe('Session active elsewhere');
-        client1.disconnect();
-        client2.disconnect();
-        done();
       });
     });
   });

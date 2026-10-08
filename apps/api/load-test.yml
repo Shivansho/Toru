@@ -1,0 +1,23 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 60
+      arrivalRate: 10
+      name: "Ramp up to 500 connections"
+  engines:
+    socketio-v3: {}
+scenarios:
+  - engine: socketio-v3
+    flow:
+      - emit:
+          channel: "authenticate"
+          data:
+            token: "mock-token"
+      - think: 1
+      - emit:
+          channel: "find_match"
+      - think: 5
+      - emit:
+          channel: "message"
+          data: "Hello from artillery"
+      - think: 10

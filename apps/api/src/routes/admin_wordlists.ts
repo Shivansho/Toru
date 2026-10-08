@@ -64,7 +64,7 @@ router.post('/import', async (req: Request, res: Response) => {
   const { collegeId, csv } = req.body;
   if (!collegeId || !csv) return res.status(400).json({ error: 'Missing fields' });
 
-  const lines = csv.split('\\n');
+  const lines = csv.split('\n');
   let added = 0;
 
   const performAction = async (tx: any) => {

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { requireAuth, requireAgeVerified } from '../middleware/auth';
+import { reportLimiter } from '../middleware/rateLimiter';
 import { redisClient } from '../redis';
 import { io } from '../index';
 
@@ -82,6 +83,9 @@ router.post('/blocks', requireAuth, requireAgeVerified, async (req: Request, res
   if (sessionId) {
     const session = await prisma.chatSession.findUnique({ where: { id: sessionId } });
     if (!session) return res.status(404).json({ error: 'Session not found' });
+    if (session.userAId !== req.userId && session.userBId !== req.userId) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
     blockedId = session.userAId === req.userId ? session.userBId : session.userAId;
   } else if (globalMessageId) {
     const msg = await prisma.globalMessage.findUnique({ where: { id: globalMessageId } });
@@ -131,17 +135,13 @@ router.delete('/blocks/:alias', requireAuth, requireAgeVerified, async (req: Req
   return res.json({ message: 'User unblocked' });
 });
 
-router.post('/reports', requireAuth, requireAgeVerified, async (req: Request, res: Response) => {
+router.post('/reports', requireAuth, requireAgeVerified, reportLimiter, async (req: Request, res: Response) => {
   const { reason, note, sessionId, globalMessageId } = req.body;
   
   if (!reason) return res.status(400).json({ error: 'Reason is required' });
   if (!sessionId && !globalMessageId) return res.status(400).json({ error: 'Reference required' });
 
-  // Rate limiting (simple placeholder check, real one via Redis)
-  const rlKey = `ratelimit:report:${req.userId}`;
-  const reqs = await redisClient.incr(rlKey);
-  if (reqs === 1) await redisClient.expire(rlKey, 60); // 1 min window
-  if (reqs > 5) return res.status(429).json({ error: 'Too many reports, try again later' });
+  // Rate limit handled by reportLimiter middleware
 
   const user = await prisma.user.findUnique({ where: { id: req.userId }, include: { college: true } });
   if (!user) return res.status(401).json({ error: 'User not found' });
@@ -151,6 +151,10 @@ router.post('/reports', requireAuth, requireAgeVerified, async (req: Request, re
   if (sessionId) {
     const session = await prisma.chatSession.findUnique({ where: { id: sessionId } });
     if (!session) return res.status(404).json({ error: 'Session not found' });
+    
+    if (session.userAId !== req.userId && session.userBId !== req.userId) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
     
     // Check 72h window
     const retentionSettings = user.college.retentionSettings as any;

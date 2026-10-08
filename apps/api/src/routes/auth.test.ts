@@ -94,7 +94,7 @@ describe('Auth Endpoints', () => {
     await request(app).post('/auth/request-otp').send({ email: testEmail });
     const hash = hashEmail(testEmail, EMAIL_HASH_PEPPER);
 
-    let res = await request(app).post('/auth/verify-otp').send({ email: testEmail, code: '000000' });
+    const res = await request(app).post('/auth/verify-otp').send({ email: testEmail, code: '000000' });
     expect(res.status).toBe(401);
 
     const otpRec = await prisma.otpCode.findUnique({ where: { emailHash: hash } });
